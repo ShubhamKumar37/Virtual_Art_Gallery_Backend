@@ -1,10 +1,13 @@
-export const validateRequest = (schema) => async (req, res, next) => {
-    try{
-        const {error} = await schema.validateAsync(req.body);
-        if(error) return next(new ErrorHandler(400, error.details[0].message));
-        next();
-    }
-    catch(error){
-        return next(new ErrorHandler(500, "Internal Server Error"));
+import Joi from "joi";
+import { ErrorHandler } from "../helper/index.js";
+
+export const validateRequest = (schema) => {
+    return async (req, res, next) => {
+        try {
+            await schema.validateAsync(req.body);
+            next();
+        } catch (error) {
+            next(new ErrorHandler(400, error.message));
+        }
     }
 }

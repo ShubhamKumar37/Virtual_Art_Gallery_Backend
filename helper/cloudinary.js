@@ -21,7 +21,6 @@ const cleanUpTempFile = async (filePath) =>
 const getPublicId = (filePath) =>
 {
     if(filePath.includes("cloudinary")) return `{process.env.CLOUDINARY_FOLDER}/` + filePath.split("/").pop().split(".")[0];
-    if(filePath.includes("https://")) return filePath.split("/").pop().split(".")[0];
     return null;
 }
 
