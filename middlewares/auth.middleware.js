@@ -2,11 +2,15 @@ import { asyncHandler, ErrorHandler } from "../helper/index.js";
 import jwt from "jsonwebtoken";
 
 export const verifyToken = asyncHandler(async(req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1] || req.body.acess_token;
+    const token = req.headers.authorization?.split(" ")[1] || req.body.refresh_token;
     if(!token) return next(new ErrorHandler(401, "Unauthorized"));
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
+    try{
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    }catch(error){
+        return next(new ErrorHandler(401, "Token is invalid"));
+    }
 });
 
 export const hasArtistRole = asyncHandler(async(req, res, next) => {

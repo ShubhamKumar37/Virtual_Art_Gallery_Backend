@@ -13,19 +13,19 @@ const app = express();
 dotenv.config();
 connectDB();
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(ip.mw());
+app.use(cookieParser());
 app.use(fileUpload({
     userTempFiles: true,
     tempFileDir: "./temp",
-    debug: true,
+    debug: false,
     createParentPath: true,
     abortOnLimit: true,
     limit: 50 * 1024 * 1024,
     limits: { fileSize: 50 * 1024 * 1024 },
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(ip.mw());
-app.use(cookieParser());
 
 app.use(cors({
     origin: process.env.FRONTEND_URL,

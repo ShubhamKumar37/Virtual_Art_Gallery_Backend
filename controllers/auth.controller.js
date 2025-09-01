@@ -6,18 +6,19 @@ import crypto from "crypto";
 
 export const sendOtp = asyncHandler(async(req, res) => {
     const { email } = req.body;
+    if(!email) return next(new ErrorHandler(400, "Email is required"));
     const otp = Math.floor(100000 + Math.random() * 900000);
     await Otp.create({ email, otp });
-
-    return new ApiResponse(200, "OTP sent successfully");
+    
+    return res.status(200).json(new ApiResponse(200, "OTP sent successfully"));
 });
 
 export const refreshToken = asyncHandler(async(req, res, next) => {
-    const {refreshToken} = req.cookies;
+    const refreshToken = req.cookies.refresh_token;
     if(!refreshToken) return next(new ErrorHandler(404, "Refresh token not found"));
-    
-    const user = await User.findById(req.user.id);
+    const user = await User.findOne({refreshToken: refreshToken}).select("+refreshToken");
     if(!user) return next(new ErrorHandler(404, "User not found"));
+
     if(refreshToken !== user.refreshToken)
     {
         res.clearCookie("refresh_token");
@@ -25,7 +26,7 @@ export const refreshToken = asyncHandler(async(req, res, next) => {
     }
 
     const newAccessToken = await jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
-    return new ApiResponse(200, newAccessToken, "Token refreshed successfully");
+    return res.status(200).json(new ApiResponse(200, newAccessToken, "Token refreshed successfully"));
 });
 
 export const register = asyncHandler(async(req, res, next) => {
@@ -34,13 +35,13 @@ export const register = asyncHandler(async(req, res, next) => {
     const userExist = await User.findOne({ email });
     if(userExist) return next(new ErrorHandler(404, "User already exists"));
 
-    const otpExist = await Otp.findOne({ email });
+    const otpExist = await Otp.findOne({ email }).sort({ createdAt: -1 });
     if(!otpExist) return next(new ErrorHandler(404, "OTP not found"));
     if(otpExist.otp !== otp) return next(new ErrorHandler(403, "Invalid OTP"));
 
     const newUser = await User.create({ name, email, password });
     await sendMail(email, "Welcome to Virtual Gallery", newUserTemplate(name));
-    return new ApiResponse(201, newUser, "User created successfully");
+    return res.status(201).json(new ApiResponse(201, newUser, "User created successfully"));
 });
 
 export const login = asyncHandler(async(req, res, next) => {
@@ -54,13 +55,13 @@ export const login = asyncHandler(async(req, res, next) => {
 
     const accessToken = jwt.sign(
         { id: user._id, role: user.role },
-        process.env.ACCESS_TOKEN_SECRET,
+        process.env.JWT_SECRET,
         { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
         { id: user._id, role: user.role },
-        process.env.REFRESH_TOKEN_SECRET,
+        process.env.JWT_SECRET,
         { expiresIn: "7d" }
     );
 
@@ -70,7 +71,7 @@ export const login = asyncHandler(async(req, res, next) => {
     const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1000;
     res.cookie("refresh_token", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production' ? true : false,
         sameSite: "strict",
         maxAge: sevenDaysInMilliseconds
     });
@@ -84,14 +85,14 @@ export const login = asyncHandler(async(req, res, next) => {
         accessToken: accessToken 
     };
 
-    return new ApiResponse(200, userResponse, "User logged in successfully");
+    return res.status(200).json(new ApiResponse(200, userResponse, "User logged in successfully"));
 });
 
 export const getMe = asyncHandler(async(req, res, next) => {
     const {id} = req.user;
     const user = await User.findById(id);
     if(user.isBanned) return next(new ErrorHandler(403, "User is banned till " + user.bannedTill));
-    return new ApiResponse(200, user, "User fetched successfully");
+    return res.status(200).json(new ApiResponse(200, user, "User fetched successfully"));
 });
 
 export const resetPasswordLink = asyncHandler(async(req, res, next) => {
@@ -104,7 +105,7 @@ export const resetPasswordLink = asyncHandler(async(req, res, next) => {
     await user.save();
 
     await sendMail(email, "Reset Password", resetPasswordTemplate(token));
-    return new ApiResponse(200, null, "Reset password link sent successfully");
+    return res.status(200).json(new ApiResponse(200, null, "Reset password link sent successfully"));
 });
 
 export const resetPassword = asyncHandler(async(req, res, next) => 
@@ -117,13 +118,17 @@ export const resetPassword = asyncHandler(async(req, res, next) =>
     userExist.token = null;
     
     await userExist.save();
-    return new ApiResponse(200, null, "Password reset successfully");
+    return res.status(200).json(new ApiResponse(200, null, "Password reset successfully"));
 });
 
-export const logout = asyncHandler(async(req, res) => {
-    const {id} = req.user;
-    await User.findByIdAndUpdate(id, {refreshToken: null});
+export const logout = asyncHandler(async(req, res, next) => {
+    const refreshToken = req.cookies.refresh_token;
+    const userExist = await User.findOne({refreshToken: refreshToken}).select("+refreshToken");
+    if(!userExist) return next(new ErrorHandler(404, "User not found"));
+    
+    userExist.refreshToken = null;
+    await userExist.save();
     
     res.clearCookie("refresh_token");
-    return new ApiResponse(200, "User logged out successfully");
+    return res.status(200).json(new ApiResponse(200, "User logged out successfully"));
 });

@@ -1,0 +1,144 @@
+{
+    "info": {
+      "name": "Virtual Gallery API",
+      "description": "Postman collection for authentication APIs (auth folder)\nBase URL: http://localhost:5000/api/auth/",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "auth",
+        "item": [
+          {
+            "name": "Send OTP",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              },
+              "url": {
+                "raw": "http://localhost:5000/api/auth/send-otp",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "send-otp"]
+              }
+            }
+          },
+          {
+            "name": "Register",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"string\",\n  \"otp\": 123456\n}"
+              },
+              "url": {
+                "raw": "http://localhost:5000/api/auth/register",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "register"]
+              }
+            }
+          },
+          {
+            "name": "Login",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"string\"\n}"
+              },
+              "url": {
+                "raw": "http://localhost:5000/api/auth/login",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "login"]
+              }
+            }
+          },
+          {
+            "name": "Refresh Token",
+            "request": {
+              "method": "GET",
+              "url": {
+                "raw": "http://localhost:5000/api/auth/refresh-token",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "refresh-token"]
+              }
+            }
+          },
+          {
+            "name": "Get Me",
+            "request": {
+              "method": "GET",
+              "header": [
+                { "key": "Authorization", "value": "Bearer <accessToken>" }
+              ],
+              "url": {
+                "raw": "http://localhost:5000/api/auth/me",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "me"]
+              }
+            }
+          },
+          {
+            "name": "Send Reset Password Link",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"john@example.com\"\n}"
+              },
+              "url": {
+                "raw": "http://localhost:5000/api/auth/reset-password-link",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "reset-password-link"]
+              }
+            }
+          },
+          {
+            "name": "Reset Password",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"token\": \"resetTokenFromEmail\",\n  \"password\": \"newPassword\"\n}"
+              },
+              "url": {
+                "raw": "http://localhost:5000/api/auth/reset-password",
+                "protocol": "http",
+                "host": ["localhost"],
+                "port": "5000",
+                "path": ["api", "auth", "reset-password"]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+  

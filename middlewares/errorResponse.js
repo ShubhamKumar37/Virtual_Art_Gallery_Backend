@@ -1,6 +1,7 @@
 import { ErrorHandler } from "../helper/index.js";
 
 export const errorResponse = (err, req, res, next) => {
+    console.log(err);
     if(err instanceof ErrorHandler)
     {
         res.status(err.statusCode).json({
