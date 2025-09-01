@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }, 
+    password: { type: String, required: true, select: false }, 
     profilePicture: { type: String, default: null },
     role: { type: String, enum: ["admin", "user", "artist"], default: "user" },
     bio: { type: String, default: null },
@@ -19,10 +19,11 @@ const userSchema = new mongoose.Schema({
     banReason: { type: String, default: null },
     bannedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
-    isApproved: { type: Boolean, default: false },
+    isApproved: { type: Boolean, default: true, select: false },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
     token: { type: String, default: null }, 
+    refreshToken: { type: String, default: null, select: false },
 
 },{ timestamps: true });
 

@@ -6,6 +6,8 @@ import { errorResponse } from "./middlewares/index.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import ip from "request-ip";
+import { authRouter } from "./routes/index.js";
+
 const app = express();
 
 dotenv.config();
@@ -29,6 +31,9 @@ app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
 }));
+
+// Routs
+app.use("/api/auth", authRouter);
 
 app.use(errorResponse);
 

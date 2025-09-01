@@ -12,53 +12,97 @@ export const sendOtp = asyncHandler(async(req, res) => {
     return new ApiResponse(200, "OTP sent successfully");
 });
 
-export const register = asyncHandler(async(req, res) => {
+export const refreshToken = asyncHandler(async(req, res, next) => {
+    const {refreshToken} = req.cookies;
+    if(!refreshToken) return next(new ErrorHandler(404, "Refresh token not found"));
+    
+    const user = await User.findById(req.user.id);
+    if(!user) return next(new ErrorHandler(404, "User not found"));
+    if(refreshToken !== user.refreshToken)
+    {
+        res.clearCookie("refresh_token");
+        return next(new ErrorHandler(403, "Invalid refresh token"));
+    }
+
+    const newAccessToken = await jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    return new ApiResponse(200, newAccessToken, "Token refreshed successfully");
+});
+
+export const register = asyncHandler(async(req, res, next) => {
     const { name, email, password, otp } = req.body;
 
     const userExist = await User.findOne({ email });
-    if(userExist) return next(new ErrorHandler(400, "User already exists"));
+    if(userExist) return next(new ErrorHandler(404, "User already exists"));
 
     const otpExist = await Otp.findOne({ email });
-    if(!otpExist) return next(new ErrorHandler(400, "OTP not found"));
-    if(otpExist.otp !== otp) return next(new ErrorHandler(400, "Invalid OTP"));
+    if(!otpExist) return next(new ErrorHandler(404, "OTP not found"));
+    if(otpExist.otp !== otp) return next(new ErrorHandler(403, "Invalid OTP"));
 
     const newUser = await User.create({ name, email, password });
     await sendMail(email, "Welcome to Virtual Gallery", newUserTemplate(name));
     return new ApiResponse(201, newUser, "User created successfully");
 });
 
-export const login = asyncHandler(async(req, res) => {
+export const login = asyncHandler(async(req, res, next) => {
     const { email, password } = req.body;
+    const user = await User.findOne({ email }).select("+password +refreshToken");
 
-    const user = await User.findOne({ email }).select("-password");
-    if(!user) return next(new ErrorHandler(400, "User not found"));
-    if(!await user.isPasswordCorrect(password)) return next(new ErrorHandler(400, "Invalid password"));
-    if(user.isBanned) return next(new ErrorHandler(400, "User is banned till " + user.bannedTill));
+    const genericErrorMessage = "Invalid email or password";
+    if (!user) return next(new ErrorHandler(401, genericErrorMessage));
+    if (!(await user.isPasswordCorrect(password))) return next(new ErrorHandler(401, genericErrorMessage));
+    if (user.isBanned) return next(new ErrorHandler(403, "Your account is banned until " + user.bannedTill));    
 
-    const token = await jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    user.token = token;
+    const accessToken = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "7d" }
+    );
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1000;
+    res.cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: "strict",
+        maxAge: sevenDaysInMilliseconds
+    });
     
-    res.cookie("auth_token", token, { httpOnly: true, secure: true, sameSite: "strict", maxAge: 1000 * 60 * 60 * 24 * 10 });
-    return new ApiResponse(200, user, "User logged in successfully");
+    const userResponse = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        accessToken: accessToken 
+    };
+
+    return new ApiResponse(200, userResponse, "User logged in successfully");
 });
 
 export const getMe = asyncHandler(async(req, res, next) => {
     const {id} = req.user;
-    const user = await User.findById(id).select("-password");
-    if(user.isBanned) return next(new ErrorHandler(400, "User is banned till " + user.bannedTill));
+    const user = await User.findById(id);
+    if(user.isBanned) return next(new ErrorHandler(403, "User is banned till " + user.bannedTill));
     return new ApiResponse(200, user, "User fetched successfully");
 });
 
 export const resetPasswordLink = asyncHandler(async(req, res, next) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
-    if(!user) return next(new ErrorHandler(400, "User not found"));
+    if(!user) return next(new ErrorHandler(404, "User not found"));
     
-    const token = crypto.randomBytes(32).toString("hex");
-    
+    const token = crypto.randomBytes(32).toString("hex");    
     user.token = token;
+    await user.save();
 
-    // send email with the reset email link
     await sendMail(email, "Reset Password", resetPasswordTemplate(token));
     return new ApiResponse(200, null, "Reset password link sent successfully");
 });
@@ -66,18 +110,20 @@ export const resetPasswordLink = asyncHandler(async(req, res, next) => {
 export const resetPassword = asyncHandler(async(req, res, next) => 
 {
     const {token, password} = req.body;
-    
     const userExist = await User.findOne({token});
-    if(!userExist) return next(new ErrorHandler(400, "Invalid token"));
+    
+    if(!userExist) return next(new ErrorHandler(404, "Invalid token"));
     userExist.password = password;
     userExist.token = null;
+    
     await userExist.save();
     return new ApiResponse(200, null, "Password reset successfully");
 });
 
-
-
 export const logout = asyncHandler(async(req, res) => {
-    res.clearCookie("auth_token");
+    const {id} = req.user;
+    await User.findByIdAndUpdate(id, {refreshToken: null});
+    
+    res.clearCookie("refresh_token");
     return new ApiResponse(200, "User logged out successfully");
 });
