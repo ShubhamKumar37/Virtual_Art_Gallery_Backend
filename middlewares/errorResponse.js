@@ -4,7 +4,8 @@ export const errorResponse = (err, req, res, next) => {
     console.log(err);
     if(err instanceof ErrorHandler)
     {
-        res.status(err.statusCode).json({
+        console.log("This is the error handler");
+        return res.status(err.statusCode).json({
             success: false,
             message: err.message,
             errors: err.errors,
@@ -13,9 +14,12 @@ export const errorResponse = (err, req, res, next) => {
     }
     else
     {
-        res.status(500).json({
+        console.log("This is the error response");
+        return res.status(500).json({
             success: false,
-            message: "Internal Server Error"
+            message: "Internal Server Error",
+            errors: err.message,
+            stack: err.stack
         });
     }
 }

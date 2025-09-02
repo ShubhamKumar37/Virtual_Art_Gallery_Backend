@@ -1,5 +1,7 @@
 import fs from "fs";
 import {v2 as cloudinary} from "cloudinary";
+import dotenv from "dotenv";
+dotenv.config();
 
 cloudinary.config({ 
     cloud_name: process.env.CLOUD_NAME, 
@@ -10,7 +12,7 @@ cloudinary.config({
 const cleanUpTempFile = async (filePath) =>
 {
     try{
-        await fs.unlinkAsync(filePath);
+        await fs.unlink(filePath);
         console.log("Temp file deleted successfully");
     }
     catch(error){
@@ -20,7 +22,7 @@ const cleanUpTempFile = async (filePath) =>
 
 const getPublicId = (filePath) =>
 {
-    if(filePath.includes("cloudinary")) return `{process.env.CLOUDINARY_FOLDER}/` + filePath.split("/").pop().split(".")[0];
+    if(filePath.includes("cloudinary")) return `${process.env.CLOUDINARY_FOLDER}/` + filePath.split("/").pop().split(".")[0];
     return null;
 }
 
@@ -34,7 +36,7 @@ const uploadCloudinary = async (filePath, quality = 90, width = 1000, height = 1
             folder: process.env.CLOUDINARY_FOLDER
         });
         console.log("This is the result of the uploadCloudinary", result);
-        await cleanUpTempFile(filePath);
+        // await cleanUpTempFile(filePath);
         return result;
     }
     catch(error){
@@ -43,11 +45,12 @@ const uploadCloudinary = async (filePath, quality = 90, width = 1000, height = 1
     }
 }
 
-const deleteCloudinary = async (fileUrl) => 
+const deleteCloudinary = async (fileUrl, fileType = "image") => 
 {
     try{
         const publicId = getPublicId(fileUrl);
-        const result = await cloudinary.uploader.destroy(publicId);
+        if(!publicId) return null;
+        const result = await cloudinary.uploader.destroy(publicId, {resource_type: fileType});
         console.log("This is the result of the deleteCloudinary", result);
         return result;
     }

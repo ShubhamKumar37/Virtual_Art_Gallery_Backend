@@ -6,7 +6,7 @@ import { errorResponse } from "./middlewares/index.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import ip from "request-ip";
-import { authRouter } from "./routes/index.js";
+import { authRouter, userRouter, adminRouter, categoryRouter } from "./routes/index.js";
 
 const app = express();
 
@@ -18,11 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(ip.mw());
 app.use(cookieParser());
 app.use(fileUpload({
-    userTempFiles: true,
+    useTempFiles: true,   
     tempFileDir: "./temp",
-    debug: false,
-    createParentPath: true,
-    abortOnLimit: true,
     limit: 50 * 1024 * 1024,
     limits: { fileSize: 50 * 1024 * 1024 },
 }));
@@ -34,6 +31,9 @@ app.use(cors({
 
 // Routs
 app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/category", categoryRouter);
 
 app.use(errorResponse);
 
