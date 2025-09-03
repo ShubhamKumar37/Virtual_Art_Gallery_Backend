@@ -36,7 +36,7 @@ const uploadCloudinary = async (filePath, quality = 90, width = 1000, height = 1
             folder: process.env.CLOUDINARY_FOLDER
         });
         console.log("This is the result of the uploadCloudinary", result);
-        // await cleanUpTempFile(filePath);
+        await cleanUpTempFile(filePath);
         return result;
     }
     catch(error){

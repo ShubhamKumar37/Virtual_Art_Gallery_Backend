@@ -6,13 +6,15 @@ import { errorResponse } from "./middlewares/index.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import ip from "request-ip";
-import { authRouter, userRouter, adminRouter, categoryRouter } from "./routes/index.js";
+import useragent from "express-useragent";
+import { authRouter, userRouter, adminRouter, categoryRouter, artworkRouter } from "./routes/index.js";
 
 const app = express();
 
 dotenv.config();
 connectDB();
 
+app.use(useragent.express());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(ip.mw());
@@ -34,7 +36,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/category", categoryRouter);
-
+app.use("/api/artwork", artworkRouter);
 app.use(errorResponse);
 
 app.listen(process.env.PORT || 5000, () => {

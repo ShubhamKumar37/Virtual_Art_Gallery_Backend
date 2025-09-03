@@ -15,7 +15,7 @@ export const verifyToken = asyncHandler(async(req, res, next) => {
 
 export const hasArtistRole = asyncHandler(async(req, res, next) => {
     const {role} = req.user;
-    if(role !== "artist") return next(new ErrorHandler(403, "You are not authorized to access this resource you are not even artist"));
+    if(role !== "artist" || role !== "admin") return next(new ErrorHandler(403, "You are not authorized to access this resource you are not even artist"));
     next();
 });
 

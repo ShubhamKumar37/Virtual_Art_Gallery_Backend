@@ -24,6 +24,11 @@ const artworkSchema = new mongoose.Schema({
 
 },{ timestamps: true });
 
+artworkSchema.pre("save", function(next) {
+    if (!this.masterVersion) this.masterVersion = this._id;
+    next();
+});
+
 const Artwork = mongoose.model("Artwork", artworkSchema);
 
 export default Artwork;

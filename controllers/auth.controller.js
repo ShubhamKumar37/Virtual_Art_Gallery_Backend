@@ -1,6 +1,6 @@
 import { asyncHandler, ErrorHandler, ApiResponse, sendMail } from "../helper/index.js";
 import { resetPasswordTemplate, newUserTemplate } from "../helper/emailTemplates.js";
-import { User, Otp } from "../models/index.js";
+import { User, Otp, AuthLogs } from "../models/index.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
@@ -46,12 +46,28 @@ export const register = asyncHandler(async(req, res, next) => {
 
 export const login = asyncHandler(async(req, res, next) => {
     const { email, password } = req.body;
+    const logEntry = {
+        ip: req.clientIp || req.ip,
+        device: req.useragent.platform,
+        browser: req.useragent.browser,
+        email: email,
+        reason: "LOGIN_ATTEMPT"
+    };
+
     const user = await User.findOne({ email }).select("+password +refreshToken");
 
-    const genericErrorMessage = "Invalid email or password";
-    if (!user) return next(new ErrorHandler(401, genericErrorMessage));
-    if (!(await user.isPasswordCorrect(password))) return next(new ErrorHandler(401, genericErrorMessage));
-    if (user.isBanned) return next(new ErrorHandler(403, "Your account is banned until " + user.bannedTill));    
+    if (!user) {
+        await AuthLogs.create({ ...logEntry, reason: "USER_NOT_FOUND" });
+        return next(new ErrorHandler(401, "Invalid email or password"));
+    }
+    if (!(await user.isPasswordCorrect(password))) {
+        await AuthLogs.create({ ...logEntry, user: user._id, reason: "WRONG_PASSWORD" });
+        return next(new ErrorHandler(401, "Invalid email or password"));
+    }
+    if (user.isBanned) {
+        await AuthLogs.create({ ...logEntry, user: user._id, reason: "BANNED_USER" });
+        return next(new ErrorHandler(403, "Your account is banned until " + user.bannedTill));
+    }   
 
     const accessToken = jwt.sign(
         { id: user._id, role: user.role },

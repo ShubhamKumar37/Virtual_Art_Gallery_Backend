@@ -29,6 +29,9 @@ importers:
       express-fileupload:
         specifier: ^1.5.2
         version: 1.5.2
+      express-useragent:
+        specifier: ^1.0.15
+        version: 1.0.15
       fs:
         specifier: 0.0.1-security
         version: 0.0.1-security
@@ -229,6 +232,10 @@ packages:
   express-fileupload@1.5.2:
     resolution: {integrity: sha512-wxUJn2vTHvj/kZCVmc5/bJO15C7aSMyHeuXYY3geKpeKibaAoQGcEv5+sM6nHS2T7VF+QHS4hTWPiY2mKofEdg==}
     engines: {node: '>=12.0.0'}
+
+  express-useragent@1.0.15:
+    resolution: {integrity: sha512-eq5xMiYCYwFPoekffMjvEIk+NWdlQY9Y38OsTyl13IvA728vKT+q/CSERYWzcw93HGBJcIqMIsZC5CZGARPVdg==}
+    engines: {node: '>=4.5'}
 
   express@5.1.0:
     resolution: {integrity: sha512-DT9ck5YIRU+8GYzzU5kT3eHGA5iL+1Zd0EutOmTE9Dtk+Tvuzd23VBU+ec7HPNSTxXYO55gPV/hq4pSBJDjFpA==}
@@ -811,6 +818,8 @@ snapshots:
   express-fileupload@1.5.2:
     dependencies:
       busboy: 1.6.0
+
+  express-useragent@1.0.15: {}
 
   express@5.1.0:
     dependencies:
